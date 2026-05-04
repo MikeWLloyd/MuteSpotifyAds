@@ -17,13 +17,15 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.11.2</string>
+	<string>1.12.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>MuteSpotifyAds needs access to Apple Events to control Spotify playback and volume automatically.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2018 Simon Meusel. All rights reserved.</string>
 	<key>NSMainNibFile</key>

@@ -1,8 +1,8 @@
 #  MuteSpotifyAds
 
-[![size](https://img.shields.io/badge/size-10.6%20MB-brightgreen.svg)](https://github.com/simonmeusel/MuteSpotifyAds/releases)
-[![download size](https://img.shields.io/badge/download%20size-3.3%20MB-brightgreen.svg)](https://github.com/simonmeusel/MuteSpotifyAds/releases)
-[![macOS version support](https://img.shields.io/badge/macOS-10.12--10.15-brightgreen.svg)](https://github.com/simonmeusel/MuteSpotifyAds/releases)
+[![size](https://img.shields.io/badge/size-10.6%20MB-brightgreen.svg)](https://github.com/MikeWLloyd/MuteSpotifyAds/releases)
+[![download size](https://img.shields.io/badge/download%20size-3.3%20MB-brightgreen.svg)](https://github.com/MikeWLloyd/MuteSpotifyAds/releases)
+[![macOS version support](https://img.shields.io/badge/macOS-11%2B-brightgreen.svg)](https://github.com/MikeWLloyd/MuteSpotifyAds/releases)
 
 <p align="center"><img src="https://i.imgur.com/n12KjSw.png" height="200"></p>
 
@@ -11,6 +11,15 @@ This is a native and efficient macOS application automatically silencing ads on 
 This application is very CPU and power efficient, since it only checks for an ad when a new song gets played.
 
 This application is not in any way affiliated with Spotify.
+
+## Project origin
+
+This repository is a community-maintained fork of the original MuteSpotifyAds project created by Simon Meusel.
+
+- Original upstream repository: https://github.com/simonmeusel/MuteSpotifyAds
+- This fork: https://github.com/MikeWLloyd/MuteSpotifyAds
+
+The upstream project was archived, so this fork continues compatibility updates, build fixes, and release distribution for current macOS versions.
 
 ## Features
 
@@ -24,30 +33,63 @@ This application is not in any way affiliated with Spotify.
 
 Instead of running Spotify directly, start this application. It will automatically start Spotify. Furthermore it will mute any ads it sees. When you close Spotify this program will also terminate, and thus it no longer has any effect on your battery or CPU.
 
-As of version `1.5.0` you can also enable a option to automatically skip ads, by restarting Spoitify. Therefore, click the `☀︎` in the status bar of your mac (at the top of your screen), and then click `◎ Restart to skip ads`.
+As of version `1.5.0` you can also enable an option to automatically skip ads by restarting Spotify. Click the `☀︎` in the status bar of your Mac (at the top of your screen), and then click `◎ Restart to skip ads`.
 
 ## Installation
 
-Via [homebrew](https://brew.sh/): `brew cask install mutespotifyads`
+Homebrew note: there is currently no official `mutespotifyads` formula/cask in Homebrew core/cask.
+
+This repository now includes a custom tap cask in `Casks/mutespotifyads.rb`. Users can install from this tap:
+
+```
+brew tap MikeWLloyd/mutespotifyads
+brew install --cask mutespotifyads
+```
+
+For maintainers: this cask installs from the latest GitHub release asset at:
+
+```
+https://github.com/MikeWLloyd/MuteSpotifyAds/releases/latest/download/MuteSpotifyAds.app.tar.gz
+```
+
+To keep Homebrew installs working, publish each release with an asset named `MuteSpotifyAds.app.tar.gz`.
+
+Example packaging command after a Release build:
+
+```
+./scripts/package_release.sh
+```
+
+Release checklist:
+
+1. Run `./scripts/package_release.sh`
+2. Create a GitHub Release tag (for example `v1.12.0`)
+3. Upload assets from `dist/`:
+	- `MuteSpotifyAds.app.tar.gz` (used by Homebrew cask)
+	- `MuteSpotifyAds-source.tar.gz` (GPL source archive)
+	- `checksums.txt`
+4. Verify this URL resolves after publish:
+	- `https://github.com/MikeWLloyd/MuteSpotifyAds/releases/latest/download/MuteSpotifyAds.app.tar.gz`
 
 Manual installation:
 
-1. Download this application from the [releases page](https://github.com/simonmeusel/MuteSpotifyAds/releases/)
+1. Download this application from the [releases page](https://github.com/MikeWLloyd/MuteSpotifyAds/releases/)
 2. Move it to your Applications folder
-3. Run it using **Right Click -> Open**. You need to do this because [I don't pay Apple $99 every year](https://developer.apple.com/programs/).
-4. If you like the app, leave a [star](https://github.com/simonmeusel/MuteSpotifyAds/stargazers)!
+3. Run it using **Right Click -> Open** on first launch.
+4. If the app is unsigned/not notarized, macOS may show a security prompt. This is expected for community builds.
+5. If you like the app, leave a [star](https://github.com/MikeWLloyd/MuteSpotifyAds/stargazers)!
 
-This application is tested from macOS High Sierra (`10.13.5`) to and macOS Catalina (`10.15.1`) with Spotify `1.1.19.480.g7d17e3ce`.
+This project currently targets modern macOS (`11+`).
 
 To uninstall the application, you can simply trash `MuteSpotifyAds.app`.
 
 ### Troubleshooting
 
-If the Application does not work, follow the steps for enabling a endless private Spotify session.
+If the application does not work, follow the steps for enabling an endless private Spotify session.
 
 ## Endless private Spotify session
 
-You can also use this application to enforce a endless private session. **This requires you to grant this application additional priviledges**. To enable them, do the following:
+You can also use this application to enforce an endless private session. **This requires you to grant this application additional privileges**. To enable them, do the following:
 
 1. Go to `System Preferences` → `Security & Privacy` → `Privacy` tab → `Accessibility` → Enable the check mark next to this application. 
 2. Go to `System Preferences` → `Security & Privacy` → `Privacy` tab → `Automation` → Enable the check marks next to this application (for `Spotify` and `System Events`).
@@ -120,6 +162,14 @@ Thanks to [vadian](https://stackoverflow.com/users/5044042/vadian) for the [help
 
 ## License
 
-[GNU General Public License v3.0](https://github.com/simonmeusel/MuteSpotifyAds/blob/master/LICENSE)
+[GNU General Public License v3.0](https://github.com/MikeWLloyd/MuteSpotifyAds/blob/master/LICENSE)
 
 Copyright (C) 2018 Simon Meusel
+Copyright (C) 2026 MikeWLloyd contributors
+
+### GPLv3 compliance notes for this fork
+
+- This fork preserves the original GPLv3 licensing and attribution.
+- A fork attribution/change notice is provided in `NOTICE`.
+- If you redistribute this app (including binaries), you must also provide the corresponding source code for the distributed version under GPLv3 terms.
+- Include the GPLv3 license text (`LICENSE`) and preserve copyright/attribution notices in source and releases.

@@ -8,9 +8,10 @@
 
 import Cocoa
 import Foundation
+import UserNotifications
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, NSUserNotificationCenterDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     let endlessPrivateSessionKey = "EndlessPrivateSession"
     let restartToSkipAdsKey = "RestartToSkipAds"
     let startSpotifyKey = "StartSpotify"
@@ -40,16 +41,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSUserNotificationCenterDele
     }
     
     @IBAction func openProjectWebsite(_ sender: Any) {
-        openWebsite(url: "https://github.com/simonmeusel/MuteSpotifyAds")
+        openWebsite(url: "https://github.com/MikeWLloyd/MuteSpotifyAds")
     }
     
     @IBAction func openReportBugWebsite(_ sender: Any) {
-        openWebsite(url: "https://github.com/simonmeusel/MuteSpotifyAds/issues")
+        openWebsite(url: "https://github.com/MikeWLloyd/MuteSpotifyAds/issues")
     }
     
-    @IBAction func openSimonMeuselWebsite(_ sender: Any) {
-        openWebsite(url: "https://simonmeusel.de")
-    }
     
     @IBAction func openLicenseWebsite(_ sender: Any) {
         openWebsite(url: "https://www.gnu.org/licenses/gpl-3.0.txt")
@@ -126,21 +124,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSUserNotificationCenterDele
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        NSUserNotificationCenter.default.delegate = self
+        configureNotifications()
         
-        setStatusBarTitle(title: .noAd)
-        statusItem.menu = statusMenu
-        
-        // Get application version
+        // Defer all status bar UI setup to avoid layout recursion during
+        // AppKit's initial menu bar layout pass.
         let version = Bundle.main.infoDictionary!["CFBundleShortVersionString"]!
-        titleMenuItem.title = titleMenuItem.title + " v\(version)"
+        DispatchQueue.main.async {
+            self.statusItem.menu = self.statusMenu
+            self.setStatusBarTitle(title: .noAd)
+            self.titleMenuItem.title = self.titleMenuItem.title + " v\(version)"
+        }
         
         print("MuteSpotifyAds v\(version)")
         print("macOS \(ProcessInfo.processInfo.operatingSystemVersionString))")
         
         spotifyManager = SpotifyManager(titleChangeHandler: {
             title in
-            self.setStatusBarTitle(title: title)
+            DispatchQueue.main.async {
+                self.setStatusBarTitle(title: title)
+            }
         })
         
         if UserDefaults.standard.bool(forKey: endlessPrivateSessionKey) {
@@ -179,7 +181,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSUserNotificationCenterDele
     }
     
     func setStatusBarTitle(title: StatusBarTitle) {
-        statusItem.title = title.rawValue
+        statusItem.button?.title = title.rawValue
         
         if notificationsEnabled && title == StatusBarTitle.ad {
             sendNotificatoin(title: "Muting Spotify advertisement")
@@ -187,17 +189,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSUserNotificationCenterDele
     }
     
     func sendNotificatoin(title: String) {
-        let notification = NSUserNotification()
-        
-        notification.hasActionButton = false
-        notification.title = title
-        notification.informativeText = "You can disable notifications in the status bar"
-        
-        NSUserNotificationCenter.default.deliver(notification)
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = "You can disable notifications in the status bar"
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+
+        UNUserNotificationCenter.current().add(request)
     }
     
-    func userNotificationCenter(_ center: NSUserNotificationCenter, shouldPresent notification: NSUserNotification) -> Bool {
-        return true
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner])
+    }
+
+    func configureNotifications() {
+        let notificationCenter = UNUserNotificationCenter.current()
+        notificationCenter.delegate = self
+        notificationCenter.requestAuthorization(options: [.alert, .sound]) { _, _ in
+        }
     }
     
     func openWebsite(url: String) {

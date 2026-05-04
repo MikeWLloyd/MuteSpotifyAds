@@ -32,6 +32,7 @@ class SpotifyManager: NSObject {
      * Whether Spotify is getting restarted
      */
     var isRestarting = false
+    var focusRestoreBundleIdentifier: String? = nil
     
     var lastSongSpotifyURL: String = ""
     
@@ -55,16 +56,9 @@ class SpotifyManager: NSObject {
     
     func handleSpotifyQuit() {
         if (isRestarting) {
-            // Start plaing after Spotify got restarted
-            self.spotifyPlay()
-            if (isSpotifyPaused()) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: {
-                    self.handleSpotifyQuit()
-                })
-            } else {
-                self.titleChangeHandler(.noAd)
-                self.isRestarting = false
-            }
+            // Restart flow is handled by restartSpotify(). Avoid duplicate
+            // spotifyPlay() calls here because they can re-activate Spotify.
+            return
         } else {
             NSApplication.shared.terminate(self)
         }
@@ -77,7 +71,7 @@ class SpotifyManager: NSObject {
     func startWatchingForFileChanges() {
         if startSpotify {
             DispatchQueue.global(qos: .default).async {
-                self.startSpotify(foreground: true)
+                self.startSpotify(foreground: false)
                 _ = self.handleTrackChanged()
             }
         }
@@ -121,7 +115,8 @@ class SpotifyManager: NSObject {
         
         var arguments: [String] = []
         if (!foreground) {
-            arguments += ["--hide", "--background"]
+            // Use documented open(1) flags to avoid app activation/focus steal.
+            arguments += ["-g", "-j"]
         }
         arguments += ["-b", "com.spotify.client"]
         
@@ -237,18 +232,82 @@ class SpotifyManager: NSObject {
     func getCurrentSongSpotifyURL() -> String {
         return runAppleScript(script: SpotifyManager.appleScriptSpotifyPrefix + "(get spotify url of current track)")
     }
+
+    func captureFocusRestoreTarget() {
+        let capture = {
+            guard let frontmostApp = NSWorkspace.shared.frontmostApplication,
+                  let frontmostBundleIdentifier = frontmostApp.bundleIdentifier else {
+                self.focusRestoreBundleIdentifier = nil
+                return
+            }
+
+            let ownBundleIdentifier = Bundle.main.bundleIdentifier
+            if frontmostBundleIdentifier == "com.spotify.client" || frontmostBundleIdentifier == ownBundleIdentifier {
+                self.focusRestoreBundleIdentifier = nil
+                return
+            }
+
+            self.focusRestoreBundleIdentifier = frontmostBundleIdentifier
+        }
+
+        if Thread.isMainThread {
+            capture()
+        } else {
+            DispatchQueue.main.sync(execute: capture)
+        }
+    }
+
+    func restoreFocusAfterRestartIfNeeded() {
+        DispatchQueue.main.async {
+            guard let targetBundleIdentifier = self.focusRestoreBundleIdentifier else {
+                return
+            }
+
+            let ownBundleIdentifier = Bundle.main.bundleIdentifier
+            guard let currentFrontmostBundleIdentifier = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else {
+                return
+            }
+
+            // If user already switched to another app, do not steal focus back.
+            if currentFrontmostBundleIdentifier != "com.spotify.client" && currentFrontmostBundleIdentifier != ownBundleIdentifier {
+                return
+            }
+
+            guard let appToRestore = NSWorkspace.shared.runningApplications.first(where: {
+                $0.bundleIdentifier == targetBundleIdentifier
+            }) else {
+                return
+            }
+
+            _ = appToRestore.activate(options: [.activateIgnoringOtherApps])
+        }
+    }
+
+    func scheduleFocusRestoreRetries() {
+        let retryDelays: [Double] = [0.4, 1.0, 2.0, 4.0, 7.0]
+        for delay in retryDelays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: {
+                self.restoreFocusAfterRestartIfNeeded()
+            })
+        }
+    }
     
     func restartSpotify() {
         isRestarting = true
         titleChangeHandler(.ad)
+        captureFocusRestoreTarget()
         _ = runAppleScript(script: SpotifyManager.appleScriptSpotifyPrefix + "quit")
         startSpotify(foreground: false)
+        scheduleFocusRestoreRetries()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: {
             self.spotifyPlay()
+            self.restoreFocusAfterRestartIfNeeded()
             DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: {
                 self.spotifyPlay()
+                self.restoreFocusAfterRestartIfNeeded()
                 self.titleChangeHandler(.noAd)
                 self.isRestarting = false
+                self.focusRestoreBundleIdentifier = nil
             })
         })
     }

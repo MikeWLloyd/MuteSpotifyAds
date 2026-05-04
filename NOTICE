@@ -1,0 +1,22 @@
+MuteSpotifyAds (community-maintained fork)
+
+Original project:
+- Repository: https://github.com/simonmeusel/MuteSpotifyAds
+- Author: Simon Meusel
+
+Fork project:
+- Repository: https://github.com/MikeWLloyd/MuteSpotifyAds
+- Maintainer: MikeWLloyd contributors
+
+License:
+- This project is licensed under GNU General Public License v3.0.
+- See LICENSE for full text.
+
+Fork status:
+- The upstream project is archived.
+- This fork contains modifications for compatibility with current macOS versions,
+  build updates, and release/distribution maintenance.
+
+Distribution note (GPLv3):
+- If you distribute binaries, you must also provide the corresponding source code
+  under GPLv3 terms, including your modifications and license notices.
