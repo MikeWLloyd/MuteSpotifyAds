@@ -46,6 +46,8 @@ brew tap MikeWLloyd/mutespotifyads
 brew install --cask mutespotifyads
 ```
 
+> The tap is hosted at https://github.com/MikeWLloyd/homebrew-mutespotifyads
+
 For maintainers: this cask installs from the latest GitHub release asset at:
 
 ```
